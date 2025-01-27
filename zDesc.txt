@@ -1,0 +1,35 @@
+1. Mint: 
+    - cuando alguien deposita en la vault, se llamara a mint, cuando esto suceda
+    nesecitamos establecer la tasa de interes para ese usuario.
+    - si alguien ha hecho el mint antes, ya han depositado tokens en la vault y los han acuñado y 
+    luego de nuevo lo depositan en la vault y vuelven a llamar al mint. el diseño del protocolo es
+    tal que si haces eso, tu tasa de interes va a aumentar. sin embargo queremos realizar esta operacion 
+    despues de acumular algun interes para ese usuario. acuñarles ese interes para que todo su estado este
+    actualizado antes de que acuñe alguna fichas mas.
+
+
+## llamamos saldo principal al saldo real que tiene que ha sido acuñado para ellos (Principal Balance)
+## Todos los tokens de rebase que se les haya acuñado mas cualquier pendiente de rebase que necesiten 
+   que les sean acuñados
+
+2. Burn:
+    - mecanismo para burn tokens y mint tokens para unir nuestros tokens, supongamos que esta funcion burn
+    solo se llamara cuando un usuario haga el redeem tokens (redimir sus recompensas y su deposito, se estan
+    retirando del protocolo)
+
+
+s_usersLastUpdateTimestamp => cuando se actualizo el saldo de un usuario en especifico
+s_interestRate => esta tasa de interes es una tasa por segundo por unidad de tiempo
+
+
+! === important ===
+    ✅ se anula el transfer function in ERC20 porque queremos fijar la tasa de interes para usuarios que estan recibiendo una transferencia
+    por que por ejemplo imagine que si envio mis tokens a alice y alice todavia no ha depositado en este protocolo aun no tiene
+    una tasa de interes, esos tokens no le van a generar ningun interes, sin enbargo si ya aha depositado en el protocolo y tiene
+    una tasa,  no que queremos anular eso por que entonces hay un factor de ataque donde las personas pueden reducir deliberadamente
+    las tasas de interes de otros usuarios enviadoles cantidades pequeñas de tokens
+    
+    ✅ una cosa interesante en la que pensar aqui es que el hecho de que si uso una billetera para depositar en la vault y luego 
+    uso otra billetera para depositar en la vault en mi primera billetera tendra una tasa de interes mas alta que mi segunda billetera.
+    si luego encio mis token de la primera billetera a la segunda, entonces estan todos en uno, la tasa de interes de toda mi asignacion
+    de tokens de rebase va ser al tipo de interes mas bajo.
