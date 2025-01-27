@@ -230,4 +230,21 @@ contract RebaseToken is ERC20 {
         return s_usersInterestRate[_userAddress];
     }
 
+    /*
+    * @notice Get the principle balance of a user (no including any interest)
+    * @param userAddress The address of the user
+    * @return The principle balance of the user
+    */
+    function getPrincipleBalanceOfUser(address _userAddress) external view returns (uint256) {
+        return super.balanceOf(_userAddress);
+    }
+    
+    /*
+    * @notice Get the interest rate currently set for the contract, any future deposits will receive this interest rate
+    * @param userAddress The address of the user
+    * @return The accumulated interest of the user
+    */
+    function getInterestRate() external view returns (uint256) {
+        return s_interestRate;
+    }
 }
