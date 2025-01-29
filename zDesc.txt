@@ -21,9 +21,10 @@
 s_usersLastUpdateTimestamp => cuando se actualizo el saldo de un usuario en especifico
 s_interestRate => esta tasa de interes es una tasa por segundo por unidad de tiempo
 
+onlyOwner => esto significa que solo puede ser reclamado por el propietario
 
 ! === important ===
-    ✅ se anula el transfer function in ERC20 porque queremos fijar la tasa de interes para usuarios que estan recibiendo una transferencia
+    ✅ se anula el transfer function in ERC20 por que queremos fijar la tasa de interes para usuarios que estan recibiendo una transferencia
     por que por ejemplo imagine que si envio mis tokens a alice y alice todavia no ha depositado en este protocolo aun no tiene
     una tasa de interes, esos tokens no le van a generar ningun interes, sin enbargo si ya aha depositado en el protocolo y tiene
     una tasa,  no que queremos anular eso por que entonces hay un factor de ataque donde las personas pueden reducir deliberadamente
@@ -33,3 +34,15 @@ s_interestRate => esta tasa de interes es una tasa por segundo por unidad de tie
     uso otra billetera para depositar en la vault en mi primera billetera tendra una tasa de interes mas alta que mi segunda billetera.
     si luego encio mis token de la primera billetera a la segunda, entonces estan todos en uno, la tasa de interes de toda mi asignacion
     de tokens de rebase va ser al tipo de interes mas bajo.
+
+    ✅ el contrato debe tener un propietario, que sera el implementador del smart contract
+
+    ✅ oppenzepelin tiene un smart contract "AccessControl" que permite dar algunas Direcciones, Roles y puede dar permisos a esos Roles. por ejemplo 
+    puedo crear un rol de BURN y MINT, lo que significaria que cualquiera con este Rol podra llamar a BURN y a MINT.
+    Se agregara el modificador que tiene un Rol para nuestro Rol de BURN y a MINT.
+    Tambien se puede comprobar de forma independiante si una direccion especifica tiene un Rol especifico
+
+! === Problems ===
+    🆘 El owner o propietario puede ir y agregar su propia address para poder darle el Role de "MINT_AND_BURN_ROLE" que seria un poco centralizado
+    puede BURN y a MINT. (es un riesgo conocido para este smart contract)
+
