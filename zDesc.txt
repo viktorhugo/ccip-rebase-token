@@ -46,3 +46,7 @@ onlyOwner => esto significa que solo puede ser reclamado por el propietario
     🆘 El owner o propietario puede ir y agregar su propia address para poder darle el Role de "MINT_AND_BURN_ROLE" que seria un poco centralizado
     puede BURN y a MINT. (es un riesgo conocido para este smart contract)
 
+
+
+! === TEST ===
+    ⚧️ cada entrada es una ejecucion basada en algun tipo de aletoriedad para enviar span a tantos valores como sea posible
