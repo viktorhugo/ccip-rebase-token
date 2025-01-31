@@ -17,11 +17,19 @@ contract RebaseTokenTest is Test {
     address private user = makeAddr('user');
 
     function setUp() public {
+        
+        console.log('owner', address(owner));
+        console.log('user', address(user));
+        console.log('msg.sender', address(msg.sender));
+
         vm.prank(owner);
+        console.log('prank owner', address(msg.sender));
         rebaseToken = new RebaseToken();
+        console.log('rebaseToken', address(rebaseToken));
         vault = new Vault(IRebaseToken(address(rebaseToken)));
+        console.log('vault', address(vault));
         // ahora concedemos a la vault el rol de MintAndBurn
-        rebaseToken.grantBurnAndMintRole(address(vault));
+        rebaseToken.grantMintAndBurnRole(address(vault));
         // tambien queremos asegurarnos de que agregamos recompensas a la vault
         (bool success, )= payable(address(vault)).call{value: 1e18}("");
         assert(success);

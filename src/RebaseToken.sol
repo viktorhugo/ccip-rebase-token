@@ -24,6 +24,8 @@ pragma solidity ^0.8.24;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { console } from "forge-std/Test.sol";
+
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
@@ -73,7 +75,8 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
 
     constructor() ERC20("Rebase Token", "RBST") Ownable(msg.sender) {} // the owner is the contract creator
 
-    function grantBurnAndMintRole(address accountAddress) external onlyOwner {
+    function grantMintAndBurnRole(address accountAddress) external onlyOwner {
+        console.log('set BurnAndMintRole', accountAddress);
         _grantRole(MINT_AND_BURN_ROLE, accountAddress);
     }
 
