@@ -5,8 +5,8 @@ import { IRebaseToken } from "./interfaces/IRebaseToken.sol";
 
 contract Vault {
 
-    // we need to pass the token address to th constructor
-    // create a deposit function tha mints tokens to the user equal to the amount of ETH the user
+    // we need to pass the token address to the constructor
+    // create a deposit function that mints tokens to the user equal to the amount of ETH the user
     // create a redeem function that burns tokens from the user and sends the user ETH
     // Create way to add rewards to the vault
     ////////////////////
@@ -19,7 +19,6 @@ contract Vault {
     //* State Variables  //
     //////////////////////
     IRebaseToken private immutable i_rebaseToken;
-    
 
     ///////////////////////
     //*    Events       //
@@ -45,9 +44,7 @@ contract Vault {
     // mecanismos como staking o lending and borrowing, pero lo hacemos de forma discreta.
     // o un mecanismo que solamente obtiene ganancias para usuarios basados en el monto de 
     // recompensas que se depositen en la vault
-    receive() external payable {
-
-    }
+    receive() external payable {}
 
     /** 
     * @notice Allow users to deposit ETH into the vault and mint tokens equal to the amount of ETH the user
@@ -64,6 +61,10 @@ contract Vault {
     * @dev The amount of tokens must be greater than 0
     */
     function redeem(uint256 _amount) external {
+        // para mitigar el polvo
+        if (_amount == type(uint256).max) {
+            _amount = i_rebaseToken.balanceOf(msg.sender);
+        }
         // 1. burn tokens from the user
         i_rebaseToken.burn(msg.sender, _amount);
         // 2. send ETH to the user

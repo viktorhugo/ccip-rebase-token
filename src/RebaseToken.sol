@@ -52,10 +52,10 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
     ///////////////////////
     //* State Variables  //
     //////////////////////
-    uint256 private constant PRECISION_FACTOR = 1e27;
+    uint256 private constant PRECISION_FACTOR = 1e18;
     bytes32 private constant MINT_AND_BURN_ROLE = keccak256("MINT_AND_BURN_ROLE");
 
-    uint256 private s_interestRate = (5 * PRECISION_FACTOR) / 1e8; // 10^-8 == 1/10^8
+    uint256 private s_interestRate = 5e10; // 10^-8 == 1/10^8
 
     mapping(address => uint256) private s_usersInterestRate;
     mapping(address => uint256) private s_usersLastUpdateTimestamp;
@@ -73,11 +73,15 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
         _;
     }
 
-    constructor() ERC20("Rebase Token", "RBST") Ownable(msg.sender) {} // the owner is the contract creator
+    constructor() ERC20("Rebase Token", "CAPY") Ownable(msg.sender) {} // (Ownable) Transfers ownership of the contract to a new account
 
-    function grantMintAndBurnRole(address accountAddress) external onlyOwner {
-        console.log('set BurnAndMintRole', accountAddress);
-        _grantRole(MINT_AND_BURN_ROLE, accountAddress);
+    /** 
+    * @notice Grant the mint and burn role to the account. only called by the owner
+    * @param _address The address to grant the role
+    */
+    function grantMintAndBurnRole(address _address) external onlyOwner {
+        console.log('set BurnAndMintRole', _address);
+        _grantRole(MINT_AND_BURN_ROLE, _address);
     }
 
     // poder fijar el tipo de interes
@@ -115,10 +119,6 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
     */
     // esta se llamara cuando transiramos tokens entre si
     function burn(address _from, uint256 _amount) external moreThanZero(_amount) onlyRole(MINT_AND_BURN_ROLE) {
-        // para mitigar el polvo
-        if (_amount == type(uint256).max) {
-            _amount = balanceOf(_from);
-        }
         // acreditar el interes acumulado al user
         _mintAccruedInterest(_from);
         // burn the tokens
@@ -226,9 +226,8 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
         // time elapsed: 2 
         // 10 + (10 * 0.5 * 2) = 22 tokens
         uint256 timeElapsed = block.timestamp - s_usersLastUpdateTimestamp[_user];
-        uint256 userBalance = super.balanceOf(_user); // 18 decimal precision ?
-        // return linearInterestAmount = PRECISION_FACTOR +  (s_usersInterestRate[_user] * timeElapsed);  TODO: Check this
-        return linearInterestAmount = userBalance + (userBalance * s_usersInterestRate[_user] * timeElapsed);
+        console.log('timeElapsed', timeElapsed);
+        return linearInterestAmount =  (s_usersInterestRate[_user] * timeElapsed) + PRECISION_FACTOR;
     }
 
     /**
