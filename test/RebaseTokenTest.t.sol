@@ -18,9 +18,11 @@ contract RebaseTokenTest is Test {
 
     function setUp() public {
         
+        console.log('===========  Init setUp   =================');
         console.log('owner', address(owner));
         console.log('user', address(user));
         console.log('msg.sender', address(msg.sender));
+        console.log('===========================================');
 
         vm.startPrank(owner); //cambia el address del owner a el address del msg.sender
         console.log('prank owner', address(msg.sender));
@@ -28,16 +30,19 @@ contract RebaseTokenTest is Test {
         console.log('rebaseToken', address(rebaseToken));
         vault = new Vault(IRebaseToken(address(rebaseToken)));
         console.log('vault', address(vault));
-        // ahora concedemos a la vault el rol de MintAndBurn
-        rebaseToken.grantMintAndBurnRole(address(vault));
-        // tambien queremos asegurarnos de que agregamos recompensas a la vault
-        (bool success, )= payable(address(vault)).call{value: 1e18}("");
-        console.log('payable', success);
+        rebaseToken.grantMintAndBurnRole(address(vault)); // ahora concedemos a la vault el rol de MintAndBurn
         vm.stopPrank();
+        
+        console.log('===========  Finish setUp   ===============');
+        console.log('===========================================');
+    }
+    
+    function addRewardsToVault(uint256 rewardAmount) public {
+        (bool success, )= payable(address(vault)).call{value: rewardAmount}("");
+        console.log('payable', success);
     }
 
     function testDepositLinear(uint256 amount) public {
-        console.log('===========  testDepositLinear   ===============', amount);
         // - asegurarnos de que la cantidad del amount sea suficiente para poder ver algun interes lineal
         // en una cierta cantidad de tiempo para que podamos usar el limite para restringir la cantidad
         amount = bound(amount, 1e5, type(uint96).max);
@@ -72,16 +77,46 @@ contract RebaseTokenTest is Test {
 
     function testRedeemStraightAway(uint256 amount) public {
         amount = bound(amount, 1e5, type(uint96).max);
-        console.log('New Amount for bound', amount);
         // 1. deposit
         vm.startPrank(user);
         vm.deal(user, amount);
         vault.deposit{value: amount}();
-        // assertEq(rebaseToken.balanceOf(user), amount);
+        uint256 startingBalance = rebaseToken.balanceOf(user);
+        console.log('startingBalance', startingBalance);
+        // assertEq(startingBalance, amount);
         // 2. redeem
         vault.redeem(type(uint256).max); // redeem todo el balance
         assertEq(rebaseToken.balanceOf(user), 0);
         assertEq(address(user).balance, amount);
+        vm.stopPrank();
+    }
+
+    function testRedeemAfterTimePassed(uint256 depositAmount, uint256 time) public {
+        time = bound(time, 1000, type(uint96).max);
+        depositAmount = bound(depositAmount, 1e5, type(uint96).max);
+        console.log('depositAmount', depositAmount);
+        // 1. deposit
+        vm.deal(user, depositAmount);
+        vm.prank(user);
+        vault.deposit{value: depositAmount}();
+        // 2. warp the time and check the balance again
+        vm.warp(block.timestamp + time);
+        uint256 balanceAfterTime = rebaseToken.balanceOf(user);
+        // 3. add rewards to the vault
+        vm.deal(owner, balanceAfterTime - depositAmount);
+        vm.prank(owner);
+        addRewardsToVault(balanceAfterTime -depositAmount);
+        // 4. redeem
+        vm.prank(user);
+        vault.redeem(type(uint256).max); // redeem todo el balance
+        uint256 ethBalance = address(user).balance;
+        console.log('ethBalance', ethBalance);
+        // la cantidad de tokens es igual a la cantidad que tenia de rebase tokens antes de que
+        // se retiraron despues del tiempo transcurrido
+        assertEq(ethBalance, balanceAfterTime);
+        // afirmar que su saldo eth es mayor que el monto del deposito
+        assertGt(ethBalance, depositAmount);
+
         vm.stopPrank();
     }
 }
