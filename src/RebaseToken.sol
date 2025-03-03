@@ -92,7 +92,7 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
     */    
     function setInterestRate(uint256 _newInterestRate) external onlyOwner { // solo la puede modificar el propietario
         // Set the interest rate
-        if (_newInterestRate < s_interestRate) revert RebaseToken__InterestRateCanOnlyDecrease(_newInterestRate, s_interestRate);
+        if (_newInterestRate > s_interestRate) revert RebaseToken__InterestRateCanOnlyDecrease(_newInterestRate, s_interestRate);
         s_interestRate = _newInterestRate;
         emit InterestRateSet(_newInterestRate, s_interestRate);
     }

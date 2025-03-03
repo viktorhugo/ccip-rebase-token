@@ -37,7 +37,8 @@ contract RebaseTokenTest is Test {
         console.log('===========================================');
     }
     
-    function addRewardsToVault(uint256 rewardAmount) public {
+    function addRewardsToVault(uint256 rewardAmount) public { 
+        // this function no exec because don't have previous "test" in the name function
         (bool success, )= payable(address(vault)).call{value: rewardAmount}("");
         console.log('payable', success);
     }
@@ -92,20 +93,20 @@ contract RebaseTokenTest is Test {
     }
 
     function testRedeemAfterTimePassed(uint256 depositAmount, uint256 time) public {
-        time = bound(time, 1000, type(uint96).max);
+        time = bound(time, 1000, type(uint96).max); // limitemos el tiempo de 1000 seg al maximo posible
         depositAmount = bound(depositAmount, 1e5, type(uint96).max);
         console.log('depositAmount', depositAmount);
         // 1. deposit
         vm.deal(user, depositAmount);
         vm.prank(user);
-        vault.deposit{value: depositAmount}();
+        vault.deposit{value: depositAmount}(); // depositamos el monto del depositAmount en la vault
         // 2. warp the time and check the balance again
-        vm.warp(block.timestamp + time);
-        uint256 balanceAfterTime = rebaseToken.balanceOf(user);
+        vm.warp(block.timestamp + time); // recorremos el tiempo
+        uint256 balanceAfterSomeTime = rebaseToken.balanceOf(user);
         // 3. add rewards to the vault
-        vm.deal(owner, balanceAfterTime - depositAmount);
+        vm.deal(owner, balanceAfterSomeTime - depositAmount);
         vm.prank(owner);
-        addRewardsToVault(balanceAfterTime -depositAmount);
+        addRewardsToVault(balanceAfterSomeTime - depositAmount); //el amount Rewards sera el monto del deposit 
         // 4. redeem
         vm.prank(user);
         vault.redeem(type(uint256).max); // redeem todo el balance
@@ -113,10 +114,50 @@ contract RebaseTokenTest is Test {
         console.log('ethBalance', ethBalance);
         // la cantidad de tokens es igual a la cantidad que tenia de rebase tokens antes de que
         // se retiraron despues del tiempo transcurrido
-        assertEq(ethBalance, balanceAfterTime);
-        // afirmar que su saldo eth es mayor que el monto del deposito
+        assertEq(ethBalance, balanceAfterSomeTime);
+        // comprobar que su saldo eth es mayor que el monto del deposit
         assertGt(ethBalance, depositAmount);
 
         vm.stopPrank();
+    }
+
+
+    function testTransfer(uint256 amount, uint256 amountToTransfer) public {
+        amount = bound(amount, 1e5 + 1e5, type(uint96).max);
+        amountToTransfer = bound(amountToTransfer, 1e5, amount - 1e5);
+        // 1. deposit
+        vm.deal(user, amount);
+        vm.prank(user);
+        vault.deposit{value: amount}(); // depositamos el monto del depositAmount en la vault
+        
+        address user2 = makeAddr('user2');
+        uint256 startingBalanceUser = rebaseToken.balanceOf(user);
+        uint256 startingBalanceUser2 = rebaseToken.balanceOf(user2);
+        console.log('startingBalanceUser', startingBalanceUser);
+        console.log('startingBalanceUser2', startingBalanceUser2);
+        assertEq(startingBalanceUser, amount);
+        assertEq(startingBalanceUser2, 0);
+        
+        // vamos asegurarnos de que si la tasa de interest esta fijada por el propietario 
+        // entonces cuando alguien envia sus tokens a otro user, no pueden obtener el interes en el contract
+        // encambio obtiene la tasa de interes heredada de la persona que envio los tokens
+        // owner reduce the interest rate
+        vm.prank(owner); // la persona que puede llamar establece la tasa de interes y luego podemos hacer la transfer
+        rebaseToken.setInterestRate(4e10);
+        
+        // 2. transfers the tokens
+        vm.prank(user);
+        rebaseToken.transfer(address(user2), amountToTransfer);
+        // obtenemos los saldos de los users
+        uint256 userBalanceAfterTransfer = rebaseToken.balanceOf(user);
+        uint256 user2BalanceAfterTransfer = rebaseToken.balanceOf(user2);
+        console.log('userBalanceAfterTransfer', userBalanceAfterTransfer);
+        console.log('user2BalanceAfterTransfer', user2BalanceAfterTransfer);
+        assertEq(userBalanceAfterTransfer, startingBalanceUser - amountToTransfer);
+        assertEq(user2BalanceAfterTransfer, startingBalanceUser2 + amountToTransfer);
+
+        //3. check the interest rate has been inherited ( que ha sido heredada) (5e10 not 4e10)
+        assertEq(rebaseToken.getUserInterestRate(user), 5e10);
+        assertEq(rebaseToken.getUserInterestRate(user2), 5e10);
     }
 }
